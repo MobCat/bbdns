@@ -216,8 +216,8 @@ func (s *DNSServer) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 	if len(r.Question) > 0 {
 		q := r.Question[0]
 		queryType := dns.TypeToString[q.Qtype]
-		fixname := strings.TrimSuffix(q.Name, ".")
-		s.addLog(fmt.Sprintf("[REQUEST]  %s - %s - %s Record", clientAddr, fixname, queryType))
+		fixname := strings.TrimSuffix(dns.Fqdn(q.Name), ".")
+		s.addLog(fmt.Sprintf("[REQUEST]  %s - %s =  %s Record", clientAddr, fixname, queryType))
 	} else {
 		s.addLog(fmt.Sprintf("[REQUEST]  %s - (no questions)", clientAddr))
 	}
@@ -292,9 +292,9 @@ func (s *DNSServer) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 			}
 		}
 		if len(ips) > 0 {
-			s.addLog(fmt.Sprintf("[RESPONSE] %s - %s resolved to: %s", clientAddr, q.Name, strings.Join(ips, ", ")))
+			s.addLog(fmt.Sprintf("[RESPONSE] %s - %s =  %s", clientAddr, strings.TrimSuffix(dns.Fqdn(q.Name), "."), strings.Join(ips, ", ")))
 		} else {
-			s.addLog(fmt.Sprintf("[RESPONSE] %s - %s (no A records)", clientAddr, q.Name))
+			s.addLog(fmt.Sprintf("[RESPONSE] %s - %s (no A records)", clientAddr, strings.TrimSuffix(dns.Fqdn(q.Name), ".")))
 		}
 	}
 
@@ -380,11 +380,11 @@ func getTerminalWidth() int {
 }
 
 func bbdnsTitle(){
-	fmt.Println("╔════════════════════════════════╗")
-	fmt.Println("║ BBDNS REDIRECTOR SERVER        ║")
-	fmt.Println("║ 20260210                       ║")
-	fmt.Println("║ Basic Bitch Domain Name System ║")
-	fmt.Println("╚════════════════════════════════╝\n")
+	fmt.Println("╔═════════════════════════════════╗")
+	fmt.Println("║ BBDNS - 20260319                ║")
+	fmt.Println("║ Basic Bitch Domain Name System  ║")
+	fmt.Println("║ for editing and redirecting DNS ║")
+	fmt.Println("╚═════════════════════════════════╝\n")
 }
 
 func hideCursor() {
@@ -498,7 +498,7 @@ func handleKeyboard(server *DNSServer, configFile string, quit chan bool, redraw
 				
 				// Show default redirect if set
 				if server.config.DefaultRedirect != "" {
-					server.addLog(fmt.Sprintf("Default redirect: %s", server.config.DefaultRedirect))
+					server.addLog(fmt.Sprintf("Default redirect -> %s", server.config.DefaultRedirect))
 				}
 				
 				// Re-resolve redirect targets
@@ -596,7 +596,7 @@ redirects:
 	
 	// Show default redirect if set
 	if config.DefaultRedirect != "" {
-		server.addLog(fmt.Sprintf("Default redirect: %s", config.DefaultRedirect))
+		server.addLog(fmt.Sprintf("Default redirect -> %s", config.DefaultRedirect))
 	}
 	
 	//TODO: filter to only show the last like 5 or so.
@@ -622,8 +622,8 @@ redirects:
 		Net:  "udp",
 	}
 
-	server.addLog(fmt.Sprintf("Starting DNS server on %s", config.ListenAddress))
-	server.addLog(fmt.Sprintf("Passthrough DNS: %s", config.PassthroughDNS))
+	server.addLog(fmt.Sprintf("Starting DNS server on port %s", config.ListenAddress))
+	server.addLog(fmt.Sprintf("Passthrough DNS = %s", config.PassthroughDNS))
 	server.addLog(fmt.Sprintf("Redirect rules: %d", len(config.redirectMap)))
 	server.addLog(fmt.Sprintf("DNS Config loaded. Waiting for requests...\n"))
 	
